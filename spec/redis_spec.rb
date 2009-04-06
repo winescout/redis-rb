@@ -22,7 +22,7 @@ describe "redis" do
   end
 
   after(:each) do
-    @r.flush_db
+    @r.keys('*').each {|k| @r.delete k}
   end  
 
   after(:all) do
@@ -37,6 +37,13 @@ describe "redis" do
   it "should be able to SET a key" do
     @r['foo'] = 'nik'
     @r['foo'].should == 'nik'
+  end
+  
+  it "should be able to SET a key with an expiry" do
+    @r.set('foo', 'bar', 1)
+    @r['foo'].should == 'bar'
+    sleep 2
+    @r['foo'].should == nil
   end
   
   it "should be able to SETNX(set_unless_exists)" do
@@ -59,8 +66,7 @@ describe "redis" do
     @r.incr('counter').should == 2
     @r.incr('counter').should == 3
     @r.decr('counter').should == 2
-    @r.decr('counter').should == 1
-    @r.decr('counter').should == 0
+    @r.decr('counter', 2).should == 0
   end
   # 
   it "should be able to RANDKEY(return a random key)" do
@@ -84,6 +90,14 @@ describe "redis" do
     @r['bar'].should == 'ohai'
   end
   # 
+  it "should be able to EXPIRE a key" do
+    @r['foo'] = 'bar'
+    @r.expire('foo', 1)
+    @r['foo'].should == "bar"
+    sleep 2
+    @r['foo'].should == nil
+  end
+  #
   it "should be able to EXISTS(check if key exists)" do
     @r['foo'] = 'nik'
     @r.key?('foo').should be_true
